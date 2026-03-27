@@ -1,1 +1,983 @@
-<html><body><h1>안녕오늘</h1></body></html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>안녕오늘 — 90초 음성 회고 앱</title>
+  <meta name="description" content="퇴근 후 90초만 말하면, AI가 오늘 하루를 요약하고 감정을 정리해줍니다. 가장 쉬운 회고 습관, 안녕오늘." />
+  <meta property="og:title" content="안녕오늘 — 90초 음성 회고 앱" />
+  <meta property="og:description" content="말로 하는 가장 쉬운 일기. AI가 요약·감정·키워드를 정리해드립니다." />
+  <meta property="og:url" content="https://anyongoneul.com" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #09090e;
+      --surface: #13131a;
+      --surface2: #1e1e28;
+      --border: #252530;
+      --text-primary: #eeedf5;
+      --text-secondary: #7a7a90;
+      --text-tertiary: #4a4a60;
+      --accent: #b09fff;
+      --accent2: #7ff0c8;
+      --accent-glow: rgba(176, 159, 255, 0.15);
+      --accent2-glow: rgba(127, 240, 200, 0.12);
+      --joy: #FFD93D;
+      --calm: #4D96FF;
+      --achieve: #6BCB77;
+      --anxiety: #C4A1FF;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Noto Sans KR', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(9, 9, 14, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 0 5vw;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent-glow), rgba(127,240,200,0.1));
+      border: 1px solid rgba(176,159,255,0.3);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .nav-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text-primary); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #1a1040 !important;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      transition: opacity 0.15s !important;
+    }
+
+    .nav-cta:hover { opacity: 0.9; color: #1a1040 !important; }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 80px 5vw 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(176,159,255,0.12) 0%, transparent 70%);
+      top: -100px; left: -100px;
+      animation: drift1 12s ease-in-out infinite;
+    }
+
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(127,240,200,0.08) 0%, transparent 70%);
+      bottom: -60px; right: 10%;
+      animation: drift2 14s ease-in-out infinite;
+    }
+
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(255,217,61,0.05) 0%, transparent 70%);
+      top: 40%; right: 20%;
+      animation: drift3 16s ease-in-out infinite;
+    }
+
+    @keyframes drift1 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(40px, 30px); }
+    }
+    @keyframes drift2 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-30px, -20px); }
+    }
+    @keyframes drift3 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, -40px); }
+    }
+
+    .hero-content {
+      max-width: 680px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(176,159,255,0.08);
+      border: 1px solid rgba(176,159,255,0.2);
+      border-radius: 100px;
+      padding: 6px 14px;
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent2);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 {
+      font-size: clamp(38px, 6vw, 68px);
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+    }
+
+    h1 .hl {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 500px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #1a1040;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 24px;
+      border-radius: 12px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 30px rgba(176,159,255,0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 40px rgba(176,159,255,0.4);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      padding: 14px 0;
+      transition: color 0.15s;
+    }
+
+    .btn-secondary:hover { color: var(--text-primary); }
+
+    .hero-stats {
+      display: flex;
+      gap: 36px;
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item { }
+
+    .stat-val {
+      display: block;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 3px;
+    }
+
+    /* PHONE MOCKUP */
+    .hero-visual {
+      position: absolute;
+      right: 5vw;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .phone-frame {
+      width: 260px;
+      height: 520px;
+      background: var(--surface);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 80px; height: 26px;
+      background: var(--bg);
+      border-radius: 0 0 16px 16px;
+      z-index: 2;
+    }
+
+    .phone-screen {
+      padding: 40px 18px 18px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ps-greeting {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 300;
+    }
+
+    .ps-greeting strong { color: var(--text-primary); font-weight: 500; }
+
+    .ps-streak {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 183, 77, 0.1);
+      border: 1px solid rgba(255, 183, 77, 0.2);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #FFB74D;
+      width: fit-content;
+    }
+
+    .ps-rec-btn {
+      width: 70px; height: 70px;
+      background: linear-gradient(135deg, var(--accent), rgba(127,240,200,0.8));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      align-self: center;
+      margin: 8px 0;
+      box-shadow: 0 0 24px rgba(176,159,255,0.4);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { box-shadow: 0 0 24px rgba(176,159,255,0.4); transform: scale(1); }
+      50% { box-shadow: 0 0 40px rgba(176,159,255,0.6); transform: scale(1.04); }
+    }
+
+    .ps-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+
+    .ps-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .ps-card-date { font-size: 10px; color: var(--text-tertiary); }
+    .ps-card-emotion { font-size: 16px; }
+    .ps-card-text { font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; }
+    .ps-card-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(107,203,119,0.12);
+      color: #6BCB77;
+      border-radius: 20px;
+      padding: 3px 8px;
+      font-size: 9.5px;
+      margin-top: 7px;
+    }
+
+    /* FEATURES */
+    .section {
+      padding: 100px 5vw;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .section-title {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: 17px;
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 60px;
+    }
+
+    /* FLOW STEPS */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .step {
+      background: var(--surface);
+      padding: 32px 28px;
+      position: relative;
+    }
+
+    .step:first-child { border-radius: 20px 0 0 20px; }
+    .step:last-child { border-radius: 0 20px 20px 0; }
+
+    .step-num {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .step-icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .step-desc {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* EMOTION GRID */
+    .emotions-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .emotion-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .emotion-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+
+    .emotion-chip:hover {
+      border-color: rgba(255,255,255,0.12);
+      transform: translateY(-2px);
+    }
+
+    .emotion-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .emotion-emoji { font-size: 22px; }
+
+    .emotion-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
+    }
+
+    .price-card.featured {
+      border-color: rgba(176,159,255,0.4);
+      background: linear-gradient(145deg, var(--surface) 0%, rgba(176,159,255,0.04) 100%);
+      position: relative;
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #1a1040;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .plan-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .plan-price {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .plan-price span {
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+
+    .plan-trial {
+      font-size: 13px;
+      color: var(--accent2);
+      margin-bottom: 24px;
+    }
+
+    .plan-features {
+      list-style: none;
+      padding: 0;
+    }
+
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .plan-features li .check {
+      color: var(--accent2);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .plan-features li .cross {
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* FINAL CTA */
+    .final-cta {
+      text-align: center;
+      padding: 100px 5vw 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .final-cta-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(176,159,255,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .final-cta h2 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .final-cta p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      font-weight: 300;
+      margin-bottom: 40px;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 36px 5vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.15s;
+    }
+
+    footer a:hover { color: var(--text-primary); }
+
+    .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hero-visual { display: none; }
+      .hero-content { max-width: 100%; }
+    }
+
+    @media (max-width: 640px) {
+      .steps { grid-template-columns: 1fr; }
+      .step:first-child, .step:last-child { border-radius: 0; }
+      .emotion-grid { grid-template-columns: repeat(2, 1fr); }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .hero-stats { gap: 24px; flex-wrap: wrap; }
+      .nav-links { display: none; }
+    }
+
+    /* DIVIDER */
+    .full-bleed {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      max-width: 100% !important;
+    }
+
+    .section-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 5vw;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="nav-icon">👋</div>
+      <span class="nav-name">안녕오늘</span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">사용 방법</a>
+      <a href="#emotions">감정</a>
+      <a href="#pricing">요금제</a>
+      <a href="mailto:support@anyongoneul.com">문의</a>
+      <a href="#download" class="nav-cta">무료 시작</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <div class="badge-dot"></div>
+        이제 Android에서 만나보세요
+      </div>
+
+      <h1>
+        말로 하는<br />
+        <span class="hl">가장 쉬운 하루</span><br />
+        회고
+      </h1>
+
+      <p class="hero-sub">
+        퇴근 후 90초만 말하면, AI가 요약·감정·키워드를 정리해줍니다.
+        작심삼일 없는 회고 습관의 시작.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn-primary" href="#download" id="download">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.29c.13.07.28.11.43.11.22 0 .44-.07.63-.2l13.6-7.85-3.03-3.03-11.63 10.97zm-1.18-19.9v19.22c0 .58.31 1.1.78 1.39l10.97-10.35L2.83 3.0A1.57 1.57 0 003 3.39zM20.64 9.62l-2.6-1.5-3.39 3.19 3.39 3.39 2.62-1.51c.75-.43.75-1.14 0-1.57zM3.61.91C3.42.78 3.2.71 2.98.71c-.15 0-.3.04-.43.11L14.18 11.9l3.04-3.04L3.61.91z"/></svg>
+          Google Play에서 다운로드
+        </a>
+        <a class="btn-secondary" href="#how">
+          어떻게 동작하나요?
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-val">90초</span>
+          <span class="stat-label">하루 최소 기록 시간</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">8가지</span>
+          <span class="stat-label">감정 분류</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val">무료</span>
+          <span class="stat-label">회원가입 없이 시작</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone Mockup -->
+    <div class="hero-visual">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="ps-greeting">
+            안녕, <strong>오늘 하루는 어땠어요?</strong><br />
+            <span style="font-size:9px;color:var(--text-tertiary)">2026년 3월 27일 목요일</span>
+          </div>
+
+          <div class="ps-streak">🔥 7일 연속 기록 중</div>
+
+          <div style="text-align:center;padding:4px 0;">
+            <div class="ps-rec-btn">🎙</div>
+            <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px">탭하여 녹음 시작</div>
+          </div>
+
+          <div class="ps-card">
+            <div class="ps-card-meta">
+              <span class="ps-card-date">어제 · 저녁 9:41</span>
+              <span class="ps-card-emotion">💪</span>
+            </div>
+            <div class="ps-card-text">
+              팀 미팅에서 Q2 전략을 발표했다. 예상보다 피드백이 좋아서 뿌듯했고, 퇴근 후 저녁도 맛있게 먹었다.
+            </div>
+            <div class="ps-card-tag">✓ 성취감</div>
+          </div>
+
+          <div class="ps-card" style="opacity:0.5">
+            <div class="ps-card-meta">
+              <span class="ps-card-date">3월 25일</span>
+              <span class="ps-card-emotion">😌</span>
+            </div>
+            <div class="ps-card-text" style="font-size:10px">오늘은 집에서 조용히 쉬는 날...</div>
+            <div class="ps-card-tag" style="background:rgba(77,150,255,0.1);color:#4D96FF">✓ 평온함</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how">
+    <div class="section-label">사용 방법</div>
+    <h2 class="section-title">3단계, 그게 전부예요</h2>
+    <p class="section-sub">글을 쓰는 부담 없이, 말하는 것만으로 하루를 완성합니다.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <span class="step-icon">🎙️</span>
+        <div class="step-title">말하세요</div>
+        <p class="step-desc">오늘 있었던 일을 자유롭게 말해보세요. 90초면 충분합니다. 회원가입도 필요 없어요.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <span class="step-icon">🤖</span>
+        <div class="step-title">AI가 정리해요</div>
+        <p class="step-desc">음성이 텍스트로 변환되고, AI가 요약·감정·키워드를 자동으로 분석합니다.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <span class="step-icon">📖</span>
+        <div class="step-title">돌아보세요</div>
+        <p class="step-desc">나의 감정 패턴과 하루 흐름을 시각적으로 확인하고, streak로 습관을 이어가세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EMOTIONS -->
+  <div class="emotions-section full-bleed">
+    <div class="section section-inner" id="emotions">
+      <div class="section-label">감정 분류</div>
+      <h2 class="section-title">8가지 감정으로<br />하루를 읽어드려요</h2>
+      <p class="section-sub">AI가 오늘의 핵심 감정을 하나로 정리합니다. Pro에서는 강도와 상세 분석까지.</p>
+
+      <div class="emotion-grid">
+        <div class="emotion-chip">
+          <span class="emotion-emoji">😊</span>
+          <div>
+            <div class="emotion-name">기쁨</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#FFD93D;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">💪</span>
+          <div>
+            <div class="emotion-name">성취감</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#6BCB77;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">😌</span>
+          <div>
+            <div class="emotion-name">평온함</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#4D96FF;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">✨</span>
+          <div>
+            <div class="emotion-name">설렘</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#FF6B9D;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">😮‍💨</span>
+          <div>
+            <div class="emotion-name">피곤함</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#A8A8A8;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">😤</span>
+          <div>
+            <div class="emotion-name">짜증</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#FF6B6B;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">😟</span>
+          <div>
+            <div class="emotion-name">불안</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#C4A1FF;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="emotion-chip">
+          <span class="emotion-emoji">😢</span>
+          <div>
+            <div class="emotion-name">슬픔</div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#74B3CE;margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <section class="section" id="pricing">
+    <div class="section-label">요금제</div>
+    <h2 class="section-title">무료로 시작하고<br />필요할 때 업그레이드</h2>
+    <p class="section-sub">기본 회고는 무료. 더 깊은 분석이 필요하면 Pro로.</p>
+
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="price-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">₩0 <span>/ 영원히</span></div>
+        <div class="plan-trial" style="color:var(--text-tertiary)">회원가입 없이 시작</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> 하루 2회 녹음 (최대 90초)</li>
+          <li><span class="check">✓</span> AI 요약 + 감정 태그 1개</li>
+          <li><span class="check">✓</span> Streak 연속 기록</li>
+          <li><span class="check">✓</span> 최근 7일 기록 접근</li>
+          <li><span class="cross">✗</span> 키워드 분석</li>
+          <li><span class="cross">✗</span> 감정 상세 + 강도</li>
+          <li><span class="cross">✗</span> 인사이트 전체 접근</li>
+        </ul>
+      </div>
+
+      <!-- Pro -->
+      <div class="price-card featured">
+        <div class="featured-badge">✨ 추천</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">₩4,900 <span>/ 월</span></div>
+        <div class="plan-trial">🎁 7일 무료 체험 · 연간 결제 시 월 ₩3,900</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> 하루 5회 녹음 (최대 3분)</li>
+          <li><span class="check">✓</span> AI 요약 + 감정 상세 + 강도</li>
+          <li><span class="check">✓</span> 키워드 분석 (3~5개)</li>
+          <li><span class="check">✓</span> Streak 연속 기록</li>
+          <li><span class="check">✓</span> <strong style="color:var(--text-primary)">무제한 기록 접근</strong></li>
+          <li><span class="check">✓</span> 인사이트 — 감정 트렌드, 패턴</li>
+          <li><span class="check">✓</span> 주간·월간 감정 그래프</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:var(--text-tertiary);margin-top:20px;text-align:center">
+      모든 요금제에서 데이터는 안전하게 암호화되어 보호됩니다. 음성 원본은 서버에 영구 저장하지 않아요.
+    </p>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final-cta">
+    <div class="final-cta-bg"></div>
+    <div style="position:relative;z-index:1">
+      <h2>오늘 하루,<br />말로 남겨보세요</h2>
+      <p>90초로 시작하는 가장 쉬운 회고 습관</p>
+      <a class="btn-primary" href="#" style="display:inline-flex">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.29c.13.07.28.11.43.11.22 0 .44-.07.63-.2l13.6-7.85-3.03-3.03-11.63 10.97zm-1.18-19.9v19.22c0 .58.31 1.1.78 1.39l10.97-10.35L2.83 3.0A1.57 1.57 0 003 3.39zM20.64 9.62l-2.6-1.5-3.39 3.19 3.39 3.39 2.62-1.51c.75-.43.75-1.14 0-1.57zM3.61.91C3.42.78 3.2.71 2.98.71c-.15 0-.3.04-.43.11L14.18 11.9l3.04-3.04L3.61.91z"/></svg>
+        Google Play에서 무료 설치
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:18px">👋</div>
+        <span style="font-size:14px;font-weight:600;color:var(--text-secondary)">안녕오늘</span>
+      </div>
+      <p>© 2026 debugduck. All rights reserved.</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://anyongoneul.com/privacy">개인정보처리방침</a>
+      <a href="https://anyongoneul.com/terms">이용약관</a>
+      <a href="mailto:support@anyongoneul.com">support@anyongoneul.com</a>
+    </div>
+  </footer>
+
+</body>
+</html>
